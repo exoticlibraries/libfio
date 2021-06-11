@@ -16,6 +16,7 @@ CESTER_TEST(test_init_destroy_file_path, _, {
     printf("Root Path: %s\n", path->root_path);
     printf("Parent Path: %s\n", path->parent_path);
     printf("Full Path: %s\n", path->full_path);
+    printf("Name: %s\n", path->name);
     printf("Name Only: %s\n", path->name_only);
     printf("File Extension: %s\n", path->extension);
 
