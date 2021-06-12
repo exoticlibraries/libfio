@@ -30,14 +30,6 @@ CESTER_TEST(fio_relative_path_name, test_inst, {
     status = fio_relative_path_name(test_inst->argv[0], full_file_path);
     cester_assert_uint_eq(status, XTD_OK);
     cester_assert_str_not_equal(full_file_path, XTD_NULL);
-
-    status = fio_relative_path_name("../../.././../../../.././//.../../../.././../../", full_file_path);
-    cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_not_equal(full_file_path, XTD_NULL);
-
-    status = fio_relative_path_name("Y:..:/Users/thecarisma", full_file_path);
-    cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_not_equal(full_file_path, XTD_NULL);
 })
 
 CESTER_TEST(test_init_destroy_file_path, test_inst, {
