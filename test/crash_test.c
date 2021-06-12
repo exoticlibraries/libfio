@@ -1,4 +1,4 @@
-/*!gcc {0} -I. -I../../include/ -I../../../libcester/include -I../include/ -o out; ./out */
+/*!gcc {0} -I. -I../../include/ -I../../libxtd/include/ -I../../../libcester/include -I../include/ -o out; ./out */
 
 #include <stdio.h>
 #include <exotic/fio/fs.h>
@@ -20,17 +20,20 @@
         }\
     }
 
-int main() {
-    METAREF_USING(fio_path, FioPath *, path, 
+#define METAREF_DEFER(defer, body) \
+    {body\
+    {defer;}}
+
+#define XLINQ(value, array) 
+
+
+/*METAREF_USING(fio_path, FioPath *, path, 
     {
         
-    })
-    METAREF_USING(fio_path, FioPath *, path, 
-    METAREF_USING_ELSE({
-        printf("It passed\n");
-    }, 
-    {
-        printf("It failed\n");
-    })
-    )
+    })*/
+
+int main() {
+    METAREF_DEFER({printf("This comes last");}, {
+        printf("This comes first\n");
+    });
 }
