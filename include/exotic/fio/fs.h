@@ -50,6 +50,10 @@ extern "C" {
 #define FIO_FILE_SEPERATOR FIO_UNIX_FILE_SEPEATOR
 #endif
 
+#ifndef XTD_PARAM_NULL_ERR
+#define XTD_PARAM_NULL_ERR 10
+#endif 
+
 /**
     
 */
@@ -129,10 +133,11 @@ int xnative_string_last_index_of(const char *str, const char delim) {
 
 enum x_stat xnative_string_sub_string_with_length(const size_t str_len, const char *str, size_t begin_index, size_t end_index, char *out) {
     size_t str_index = 0;
+    size_t index;
     if (begin_index < 0 || begin_index > str_len || end_index >= str_len) {
         return XTD_OUT_OF_RANGE_ERR;
     }
-    for (size_t index = begin_index; index <= end_index; index++) {
+    for (index = begin_index; index <= end_index; index++) {
         out[str_index++] = str[index];
     }
     return XTD_OK;
@@ -281,6 +286,49 @@ void destroy_fio_path(struct fio_path_s *fio_path) {
     }
     fio_path->memory_free(fio_path->name);
     fio_path->memory_free(fio_path);
+}
+
+/**
+   Create a new file.
+   This technique works by creating the specified file
+   and file type.
+
+   \param file_name - Non-nullable array of characters.
+ */
+bool fio_create_file(char file_name[]) {
+    FILE * file = fopen(file_name, "w");
+    if(file == NULL) {
+        return FALSE;
+    }
+    fclose(file);
+    return TRUE;
+}
+
+/**
+   Delete a file.
+ */
+bool fio_delete_file(char file_name[]) {
+    return remove(file_name) == 0;
+}
+
+/**
+    Check if a file exists. This tehcnique works by trying 
+    to read the specified file. The file exists if it is
+    read successfully. However, it is unable to read a file
+    if there is no permission to the directory where the 
+    specified file belongs.
+
+    \param file_name -  Non-nullale array of characters
+
+    \return TRUE if the exists, else FALSE
+*/
+bool fio_file_exists(char file_name[]) {
+    FILE * file = fopen(file_name, "r");
+    if (file) {
+        fclose(file);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 
