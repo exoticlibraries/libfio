@@ -23,7 +23,7 @@ CESTER_TEST(fio_absolute_path_name, test_inst, {
     cester_assert_str_not_equal(full_file_path, XTD_NULL);
 })
 
-CESTER_TEST(fio_relative_path_name, test_inst, {
+CESTER_TODO_TEST(fio_relative_path_name, test_inst, {
     char full_file_path[260];
     enum x_stat status;
 
@@ -56,9 +56,9 @@ CESTER_TEST(test_fio_path_1, test_inst, {
     FioPath *path;
     enum x_stat status;
 
-    status = init_fio_path("../../include/exotic/fio/fs.h", &path);
+    status = init_fio_path("..\\..\\include\\exotic\\fio\\fs.h", &path);
     cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_equal(path->value, "../../include/exotic/fio/fs.h");
+    cester_assert_str_equal(path->value, "..\\..\\include\\exotic\\fio\\fs.h");
     cester_assert_str_equal(path->name, "fs.h");
     cester_assert_str_equal(path->name_only, "fs");
     cester_assert_str_equal(path->extension, ".h");
