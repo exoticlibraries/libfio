@@ -14,13 +14,19 @@ CESTER_TEST(fio_absolute_path_name, test_inst, {
     cester_assert_uint_eq(status, XTD_OK);
     cester_assert_str_not_equal(full_file_path, XTD_NULL);
 
-    status = fio_absolute_path_name("../../.././../../../.././//.../../../.././../../", full_file_path);
+    status = fio_absolute_path_name("C:../../.././../../../.././//.../../../.././../../", full_file_path);
     cester_assert_uint_eq(status, XTD_OK);
     cester_assert_str_not_equal(full_file_path, XTD_NULL);
+#ifdef _WIN32
+    cester_assert_str_equal(full_file_path, "C:\\");
+#endif
 
     status = fio_absolute_path_name("Y:..:/Users/thecarisma", full_file_path);
     cester_assert_uint_eq(status, XTD_OK);
     cester_assert_str_not_equal(full_file_path, XTD_NULL);
+#ifdef _WIN32
+    cester_assert_str_equal(full_file_path, "Y:\\..:\\Users\\thecarisma");
+#endif
 })
 
 CESTER_TODO_TEST(fio_relative_path_name, test_inst, {
@@ -32,73 +38,60 @@ CESTER_TODO_TEST(fio_relative_path_name, test_inst, {
     cester_assert_str_not_equal(full_file_path, XTD_NULL);
 })
 
-CESTER_TEST(test_init_destroy_file_path, test_inst, {
-    FioPath *path;
-    enum x_stat status;
-    char full_file_path[260];
+CESTER_TEST(fio_file_name_from_path, test_inst, {
+    char *file_name1 = "./../../test_fs.c";
+    char *file_name2 = "C:\\Users\\name\\Documents\\home.blade.php";
+    char *file_name3 = "/tmp\\noextension";
+    char *file_name4 = "nofilename";
+    char file_name_only[20];
 
-    status = fio_absolute_path_name(test_inst->argv[0], full_file_path);
-    cester_assert_uint_eq(status, XTD_OK);
-    status = init_fio_path(full_file_path, &path);
-    cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_not_equal(path->root_name, XTD_NULL);
-    cester_assert_str_not_equal(path->root_path, XTD_NULL);
-    cester_assert_str_not_equal(path->parent_path, XTD_NULL);
-    cester_assert_str_not_equal(path->value, XTD_NULL);
-    cester_assert_str_not_equal(path->name, XTD_NULL);
-    cester_assert_str_not_equal(path->name_only, XTD_NULL);
-    cester_assert_str_not_equal(path->extension, XTD_NULL);
-
-    destroy_fio_path(path);
+    cester_assert_uint_eq(fio_file_name_from_path(XTD_NULL, file_name_only), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_name_from_path(file_name1, XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_name_from_path(XTD_NULL, XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_name_from_path(file_name1, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, "test_fs.c");
+    cester_assert_uint_eq(fio_file_name_from_path(file_name2, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, "home.blade.php");
+    cester_assert_uint_eq(fio_file_name_from_path(file_name3, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, "noextension");
+    cester_assert_uint_eq(fio_file_name_from_path(file_name4, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, "nofilename");
 })
 
-CESTER_TEST(test_fio_path_1, test_inst, {
-    FioPath *path;
-    enum x_stat status;
+CESTER_TEST(fio_file_name_only, test_inst, {
+    char *file_name1 = "test_fs.c";
+    char *file_name2 = "home.blade.php";
+    char *file_name3 = "noextension";
+    char file_name_only[11];
 
-    status = init_fio_path("..\\..\\include\\exotic\\fio\\fs.h", &path);
-    cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_equal(path->value, "..\\..\\include\\exotic\\fio\\fs.h");
-    cester_assert_str_equal(path->name, "fs.h");
-    cester_assert_str_equal(path->name_only, "fs");
-    cester_assert_str_equal(path->extension, ".h");
-
-    status = init_fio_path("../../include/exotic/fio/fs", &path);
-    cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_equal(path->value, "../../include/exotic/fio/fs");
-    cester_assert_str_equal(path->name, "fs");
-    cester_assert_str_equal(path->name_only, "fs");
-    cester_assert_str_equal(path->name, path->name_only);
-    cester_assert_str_equal(path->extension, "");
-
-    destroy_fio_path(path);
+    cester_assert_uint_eq(fio_file_name_only(XTD_NULL, file_name_only), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_name_only(file_name1, XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_name_only(XTD_NULL, XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_name_only(file_name1, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, "test_fs");
+    cester_assert_uint_eq(fio_file_name_only(file_name2, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, "home.blade");
+    cester_assert_uint_eq(fio_file_name_only(file_name3, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, "noextension");
 })
 
-CESTER_TEST(test_fio_path_2, test_inst, {
-    FioPath *path;
-    enum x_stat status;
+CESTER_TEST(fio_file_extension, test_inst, {
+    char *file_name1 = "test_fs.c";
+    char *file_name2 = "home.blade.php";
+    char *file_name3 = "noextension";
+    char file_name_only[11];
 
-    status = init_fio_path("/tmp/crdownload", &path);
-    cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_equal(path->value, "/tmp/crdownload");
-    cester_assert_str_equal(path->root_name, "");
-    cester_assert_str_equal(path->root_path, "/");
-    cester_assert_str_equal(path->name, "crdownload");
-    cester_assert_str_equal(path->name_only, "crdownload");
-    cester_assert_str_equal(path->extension, "");
-
-    status = init_fio_path("/tmp/crdownload.mp4.tmp", &path);
-    cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_equal(path->value, "/tmp/crdownload.mp4.tmp");
-    cester_assert_str_equal(path->root_name, "");
-    cester_assert_str_equal(path->root_path, "/");
-    cester_assert_str_equal(path->name, "crdownload.mp4.tmp");
-    cester_assert_str_equal(path->name_only, "crdownload.mp4");
-    cester_assert_str_equal(path->extension, ".tmp");
-
-    destroy_fio_path(path);
+    cester_assert_uint_eq(fio_file_extension(XTD_NULL, file_name_only), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_extension(file_name1, XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_extension(XTD_NULL, XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_file_extension(file_name1, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, ".c");
+    cester_assert_uint_eq(fio_file_extension(file_name2, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, ".php");
+    cester_assert_uint_eq(fio_file_extension(file_name3, file_name_only), XTD_OK);
+    cester_assert_str_equal(file_name_only, "");
 })
 
 CESTER_OPTIONS(
-    CESTER_VERBOSE();
+    CESTER_VERBOSE_LEVEL(3);
 )

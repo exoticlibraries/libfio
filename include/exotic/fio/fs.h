@@ -13,8 +13,9 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
 #include <exotic/xtd/xcommon.h>
-/*#include <exotic/xtd/xstring.h>*/
+#include <exotic/xtd/xstring.h>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -40,19 +41,125 @@ extern "C" {
 
 #define FIO_UNIX_FILE_SEPEATOR    '/'    /**<   */
 #define FIO_WIN32_FILE_SEPEATOR   '\\'    /**<   */
+#define FIO_UNIX_FILE_SEPEATOR_STR    "/"    /**<   */
+#define FIO_WIN32_FILE_SEPEATOR_STR   "\\"    /**<   */
 
 /**
 
 */
 #ifdef _WIN32
 #define FIO_FILE_SEPERATOR FIO_WIN32_FILE_SEPEATOR
+#define FIO_FILE_SEPERATOR_STR FIO_WIN32_FILE_SEPEATOR_STR
 #else
 #define FIO_FILE_SEPERATOR FIO_UNIX_FILE_SEPEATOR
+#define FIO_FILE_SEPERATOR_STR FIO_UNIX_FILE_SEPEATOR_STR
 #endif
 
-#ifndef XTD_PARAM_NULL_ERR
-#define XTD_PARAM_NULL_ERR 10
-#endif 
+/**
+    
+*/
+static enum x_stat fio_absolute_path_name(char *file_name, char *out) {
+    if (file_name == XTD_NULL || out == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    #ifdef _WIN32
+        if (GetFullPathName((LPWSTR)file_name, MAX_PATH, (LPWSTR)out, XTD_NULL) == 0) {
+    #else
+
+    #endif
+            return XTD_ERR;
+        }
+    return XTD_OK;
+}
+
+/**
+    
+*/
+static enum x_stat fio_file_name_from_path(char *path, char *out) {
+    int index_unix;
+    int index_win32;
+    if (path == XTD_NULL || out == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    index_unix = xstring_str_last_index_of(path, FIO_UNIX_FILE_SEPEATOR_STR);
+    index_win32 = xstring_str_last_index_of(path, FIO_WIN32_FILE_SEPEATOR_STR);
+    index_unix = (index_unix > index_win32) ? index_unix : index_win32;
+    return xstring_str_sub_string(path, ++index_unix, out);
+}
+
+/**
+    
+*/
+static enum x_stat fio_file_name_only(char *path, char *out) {
+    int index;
+    if (path == XTD_NULL || out == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    index = xstring_str_last_index_of(path, ".");
+    if (index == -1) {
+        index = xstring_str_length(path);
+    }
+    return xstring_str_sub_string_in_range(path, 0, index, out);
+}
+
+/**
+    
+*/
+static enum x_stat fio_file_extension(char *path, char *out) {
+    int index;
+    if (path == XTD_NULL || out == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    index = xstring_str_last_index_of(path, ".");
+    if (index == -1) {
+        index = xstring_str_length(path);
+    }
+    return xstring_str_sub_string(path, index, out);
+}
+
+/**
+   Create a new file.
+   This technique works by creating the specified file
+   and file type.
+
+   \param file_name - Non-nullable array of characters.
+ */
+bool fio_create_file(char file_name[]) {
+    FILE * file = fopen(file_name, "w");
+    if(file == NULL) {
+        return FALSE;
+    }
+    fclose(file);
+    return TRUE;
+}
+
+/**
+   Delete a file.
+ */
+bool fio_delete_file(char file_name[]) {
+    return remove(file_name) == 0;
+}
+
+/**
+    Check if a file exists. This tehcnique works by trying 
+    to read the specified file. The file exists if it is
+    read successfully. However, it is unable to read a file
+    if there is no permission to the directory where the 
+    specified file belongs.
+
+    \param file_name -  Non-nullale array of characters
+
+    \return TRUE if the exists, else FALSE
+*/
+bool fio_file_exists(char file_name[]) {
+    FILE * file = fopen(file_name, "r");
+    if (file) {
+        fclose(file);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 
 /**
     
@@ -76,82 +183,7 @@ struct fio_path_s {
 */
 typedef struct fio_path_s FioPath;
 
-/**
-    
-*/
-enum x_stat fio_absolute_path_name(char *file_name, char *out) {
-    #ifdef _WIN32
-        if (GetFullPathName(file_name, MAX_PATH, out, XTD_NULL) == 0) {
-    #else
-
-    #endif
-            return XTD_ERR;
-        }
-    return XTD_OK;
-}
-
-
-/* TODO RESOLVE BELOW */
-
-/* use unicode conscious code */
-/* move to exotic/xtd/xstring */
-size_t xnative_string_index_of_with_length(const size_t str_len, const char *str, const char delim) {
-    size_t index = 0;
-    if (str == XTD_NULL) {
-        return -1;
-    }
-    for (; index < str_len; index++) {
-        if (str[index] == delim) {
-            return index;
-        }
-    }
-    return -1;
-}
-
-size_t xnative_string_index_of(const char *str, const char delim) {
-    return xnative_string_index_of_with_length(strlen(str), str, delim);
-}
-
-/* provide another that reads from behind */
-int xnative_string_last_index_of_with_length(const size_t str_len, const char *str, const char delim) {
-    int index = str_len;
-    if (str_len == 0 || str == XTD_NULL) {
-        return -1;
-    }
-    while (index-- > 0){
-        const char current_char = str[index];
-        if (current_char == delim) {
-            return index;
-        }
-    }
-    return -1;
-}
-
-int xnative_string_last_index_of(const char *str, const char delim) {
-    return xnative_string_last_index_of_with_length(strlen(str), str, delim);
-}
-
-enum x_stat xnative_string_sub_string_with_length(const size_t str_len, const char *str, size_t begin_index, size_t end_index, char *out) {
-    size_t str_index = 0;
-    size_t index;
-    if (begin_index < 0 || begin_index > str_len || end_index >= str_len) {
-        return XTD_OUT_OF_RANGE_ERR;
-    }
-    for (index = begin_index; index <= end_index; index++) {
-        out[str_index++] = str[index];
-    }
-    return XTD_OK;
-}
-
-enum x_stat xnative_string_sub_string(const char *str, size_t begin_index, size_t end_index, char *out) {
-    return xnative_string_sub_string_with_length(strlen(str), str, begin_index, end_index, out);
-}
-
-enum x_stat xnative_string_sub_string_from(const char *str, size_t begin_index, char *out) {
-    return xnative_string_sub_string(str, begin_index, strlen(str)-1, out);
-}
-
-static char *__fio_path_get_within_internal__(const char *path, size_t delim_last_index) {
+/*static char *__fio_path_get_within_internal__(const char *path, size_t delim_last_index) {
     enum x_stat status;
     size_t new_str_len = (strlen(path)-delim_last_index+1);
     char *name_only = calloc(1, sizeof(char) * new_str_len);
@@ -178,12 +210,12 @@ static char *__fio_path_get_within_internal_front__(const char *path, size_t end
         return XTD_NULL;
     }
     return name_only;
-}
+}*/
 
 /**
     Use mem allocator struct from linxtd, new from config
 */
-enum x_stat init_fio_path(const char *path, struct fio_path_s **out) {
+/*enum x_stat init_fio_path(const char *path, struct fio_path_s **out) {
     struct fio_path_s *fio_path;
     size_t new_str_len;
     int delim_last_index;
@@ -272,12 +304,12 @@ enum x_stat init_fio_path(const char *path, struct fio_path_s **out) {
     fio_path->memory_free = free;
     *out = fio_path;
     return XTD_OK;
-} 
+}*/
 
 /**
     
 */
-void destroy_fio_path(struct fio_path_s *fio_path) {
+/*void destroy_fio_path(struct fio_path_s *fio_path) {
     if (fio_path->extension != "") {
         fio_path->memory_free(fio_path->extension);
     }
@@ -286,50 +318,7 @@ void destroy_fio_path(struct fio_path_s *fio_path) {
     }
     fio_path->memory_free(fio_path->name);
     fio_path->memory_free(fio_path);
-}
-
-/**
-   Create a new file.
-   This technique works by creating the specified file
-   and file type.
-
-   \param file_name - Non-nullable array of characters.
- */
-bool fio_create_file(char file_name[]) {
-    FILE * file = fopen(file_name, "w");
-    if(file == NULL) {
-        return FALSE;
-    }
-    fclose(file);
-    return TRUE;
-}
-
-/**
-   Delete a file.
- */
-bool fio_delete_file(char file_name[]) {
-    return remove(file_name) == 0;
-}
-
-/**
-    Check if a file exists. This tehcnique works by trying 
-    to read the specified file. The file exists if it is
-    read successfully. However, it is unable to read a file
-    if there is no permission to the directory where the 
-    specified file belongs.
-
-    \param file_name -  Non-nullale array of characters
-
-    \return TRUE if the exists, else FALSE
-*/
-bool fio_file_exists(char file_name[]) {
-    FILE * file = fopen(file_name, "r");
-    if (file) {
-        fclose(file);
-        return TRUE;
-    }
-    return FALSE;
-}
+}*/
 
 
 #ifdef __cplusplus
