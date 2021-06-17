@@ -24,7 +24,9 @@ CESTER_BEFORE_ALL(test_inst, {
 
 CESTER_TEST(fio_create_file, test_inst, {
     cester_assert_true(fio_create_file("dami.txt"));
+#ifdef _WIN32
     cester_assert_false(fio_create_file("/folder/dami.txt"));
+#endif
     cester_assert_false(fio_create_file("dami.$#&$*$*($)$)!@#$%%^&^*&*(()"));
 })
 
