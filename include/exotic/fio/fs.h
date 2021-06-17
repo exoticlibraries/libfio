@@ -124,7 +124,7 @@ static enum x_stat fio_file_extension(char *path, char *out) {
 
    \param file_name - Non-nullable array of characters.
  */
-bool fio_create_file(char file_name[]) {
+static bool fio_create_file(char file_name[]) {
     FILE * file = fopen(file_name, "w");
     if(file == NULL) {
         return FALSE;
@@ -136,7 +136,7 @@ bool fio_create_file(char file_name[]) {
 /**
    Delete a file.
  */
-bool fio_delete_file(char file_name[]) {
+static bool fio_delete_file(char file_name[]) {
     return remove(file_name) == 0;
 }
 
@@ -151,13 +151,47 @@ bool fio_delete_file(char file_name[]) {
 
     \return TRUE if the exists, else FALSE
 */
-bool fio_file_exists(char file_name[]) {
+static bool fio_file_exists(char file_name[]) {
     FILE * file = fopen(file_name, "r");
     if (file) {
         fclose(file);
         return TRUE;
     }
     return FALSE;
+}
+
+/*
+    
+*/
+typedef void (*fio_func_ptr_report_char)(char);
+
+/*
+    Read file.
+*/
+static enum x_stat fio_read_file_chars_cb(FILE * file, fio_func_ptr_report_char callback) {
+    if (file == XTD_NULL || callback == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    while (TRUE) {
+        char c = fgetc(file);
+        if (feof(file)) {
+            break;
+        }
+        callback(c);
+    }
+    return XTD_OK;
+}
+
+/* 
+    Read file from path.
+*/
+static enum x_stat fio_read_file_chars_cb_from_path(char *fileName, fio_func_ptr_report_char callback) {
+    FILE * file = fopen(fileName, "r");
+    enum x_stat status = fio_read_file_chars_cb(file, callback);
+    if (status == XTD_OK) {
+        fclose(file);
+    }
+    return status;
 }
 
 
