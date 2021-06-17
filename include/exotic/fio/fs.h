@@ -311,6 +311,40 @@ bool fio_delete_file(char file_name[]) {
     return remove(file_name) == 0;
 }
 
+/*
+    
+*/
+typedef void (*fio_func_ptr_report_char)(char);
+
+/*
+    Read file.
+*/
+enum x_stat fio_read_file_chars_cb(FILE * file, fio_func_ptr_report_char callback) {
+    if (file == XTD_NULL || callback == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    while (TRUE) {
+        char c = fgetc(file);
+        if (feof(file)) {
+            break;
+        }
+        callback(c);
+    }
+    return XTD_OK;
+}
+
+/* 
+    Read file from path.
+*/
+enum x_stat fio_read_file_chars_cb_from_path(char *fileName, fio_func_ptr_report_char callback) {
+    FILE * file = fopen(fileName, "r");
+    enum x_stat status = fio_read_file_chars_cb(file, callback);
+    if (status == XTD_OK) {
+        fclose(file);
+    }
+    return status;
+}
+
 /**
     Check if a file exists. This tehcnique works by trying 
     to read the specified file. The file exists if it is
