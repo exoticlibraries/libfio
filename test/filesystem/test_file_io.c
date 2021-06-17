@@ -8,16 +8,26 @@
 
 CESTER_BODY(
 
+char *file_content = "";
+size_t file_index = 0;
+
 void log_file(char c) {
-    printf("%c", c);
+    file_content[file_index++] = c;
 }
 
 )
 
+CESTER_BEFORE_ALL(test_inst, {
+    file_content = (char *) malloc(100 * sizeof(char));
+    test_inst->arg = (void *) file_content;
+})
+
 CESTER_TEST(fio_create_file, test_inst, {
     cester_assert_true(fio_create_file("dami.txt"));
+#ifdef _WIN32
     cester_assert_false(fio_create_file("/folder/dami.txt"));
     cester_assert_false(fio_create_file("dami.$#&$*$*($)$)!@#$%%^&^*&*(()"));
+#endif
 })
 
 CESTER_TEST(fio_file_exists, test_inst, {
@@ -28,19 +38,46 @@ CESTER_TEST(fio_file_exists, test_inst, {
 CESTER_TEST(fio_read_file_chars_cb, test_inst, {
     FILE *my_file = fopen("dami.txt", "a");
 
+    fprintf(my_file, "Hello World"); fclose(my_file);
+    my_file = fopen("dami.txt", "r");
     cester_assert_int_eq(fio_read_file_chars_cb(my_file, XTD_NULL), XTD_PARAM_NULL_ERR);
     cester_assert_int_eq(fio_read_file_chars_cb(XTD_NULL, log_file), XTD_PARAM_NULL_ERR);
-    fprintf(my_file, "Hello World");
+    cester_assert_int_eq(fio_read_file_chars_cb(my_file, log_file), XTD_OK);
+    cester_assert_str_equal(file_content, "Hello World");
 
+    file_index = 0;
     fclose(my_file);
 })
 
 CESTER_TEST(fio_read_file_chars_cb_from_path, test_inst, {
     cester_assert_int_eq(fio_read_file_chars_cb_from_path("dami.txt", log_file), XTD_OK);
+    cester_assert_str_equal(file_content, "Hello World");
+})
+
+CESTER_TEST(fio_read_all_file_content, test_inst, {
+    char content[15];
+    FILE *my_file = fopen("dami.txt", "r");
+
+    cester_assert_int_eq(fio_read_file_chars_cb(my_file, XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_int_eq(fio_read_file_chars_cb(XTD_NULL, log_file), XTD_PARAM_NULL_ERR);
+    cester_assert_int_eq(fio_read_all_file_content(my_file, content), XTD_OK);
+    cester_assert_str_equal(content, "Hello World");
+
+    fclose(my_file);
+})
+
+CESTER_TEST(fio_read_all_file_content_from_path, test_inst, {
+    char content[15];
+    cester_assert_int_eq(fio_read_all_file_content_from_path("dami.txt", content), XTD_OK);
+    cester_assert_str_equal(content, "Hello World");
 })
 
 CESTER_TEST(fio_delete_file, test_inst, {
     cester_assert_true(fio_delete_file("dami.txt"));
     cester_assert_false(fio_delete_file("dami.txt"));
+})
+
+CESTER_AFTER_ALL(test_inst, {
+    free(test_inst->arg);
 })
 

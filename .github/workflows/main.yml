@@ -14,18 +14,21 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         platform: [x86, x64]
-        compiler: [gnu, clang]
+        compiler: [gcc, clang]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         
       - name: Setup Exotic Libraries And Run Regression
-        uses: exoticlibraries/exotic-action@v1.1
+        uses: exoticlibraries/exotic-action@v1.3
         with:
           download-exotic-libraries: true
           run-regression: true
           test-folder-recursive: true
+          selected-exotic-libraries: |
+            libcester
+            libxtd
           test-folders: |
             test/
           test-exclude-file-pattern: |
@@ -41,16 +44,20 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         platform: [x64]
+        compiler: [gcc]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         
       - name: Setup Exotic Libraries
-        uses: exoticlibraries/exotic-action@v1.1
+        uses: exoticlibraries/exotic-action@v1.3
         with:
           download-exotic-libraries: true
           run-regression: false
+          selected-exotic-libraries: |
+            libcester
+            libxtd
         
       - name: Download Dependencies
         run: |
