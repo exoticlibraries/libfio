@@ -175,6 +175,7 @@ static enum x_stat fio_read_file_chars_cb(FILE * file, fio_func_ptr_report_char 
     while (TRUE) {
         char c = fgetc(file);
         if (feof(file)) {
+            callback('\0');
             break;
         }
         callback(c);
@@ -188,6 +189,37 @@ static enum x_stat fio_read_file_chars_cb(FILE * file, fio_func_ptr_report_char 
 static enum x_stat fio_read_file_chars_cb_from_path(char *fileName, fio_func_ptr_report_char callback) {
     FILE * file = fopen(fileName, "r");
     enum x_stat status = fio_read_file_chars_cb(file, callback);
+    if (status == XTD_OK) {
+        fclose(file);
+    }
+    return status;
+}
+
+/*
+    Read all file string.
+*/
+static enum x_stat fio_read_all_file_content(FILE * file, char *out) {
+    size_t index = 0;
+    if (file == XTD_NULL || out == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    while (TRUE) {
+        char c = fgetc(file);
+        if (feof(file)) {
+            out[index] = '\0';
+            break;
+        }
+        out[index++] = c;
+    }
+    return XTD_OK;
+}
+
+/* 
+    Read all file string from path.
+*/
+static enum x_stat fio_read_all_file_content_from_path(char *fileName, char *out) {
+    FILE * file = fopen(fileName, "r");
+    enum x_stat status = fio_read_all_file_content(file, out);
     if (status == XTD_OK) {
         fclose(file);
     }
