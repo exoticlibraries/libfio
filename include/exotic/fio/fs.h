@@ -65,7 +65,7 @@ static enum x_stat fio_absolute_path_name(char *file_name, char *out) {
     #ifdef _WIN32
         if (GetFullPathName((LPWSTR)file_name, MAX_PATH, (LPWSTR)out, XTD_NULL) == 0) {
     #else
-
+        if (realpath(file_name, out)) {
     #endif
             return XTD_ERR;
         }
