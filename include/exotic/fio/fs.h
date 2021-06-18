@@ -20,25 +20,6 @@ extern "C" {
 #include <windows.h>
 #endif
 
-/**
-    Define bool to be unsigned
-*/
-#ifndef bool 
-#define bool unsigned
-#endif
-#ifndef FALSE
-    #define FALSE 0
-#endif
-#ifndef TRUE
-    #define TRUE !FALSE
-#endif
-#ifndef false
-    #define false 0
-#endif
-#ifndef true
-    #define true !false
-#endif
-
 #define FIO_UNIX_FILE_SEPEATOR    '/'    /**<   */
 #define FIO_WIN32_FILE_SEPEATOR   '\\'    /**<   */
 #define FIO_UNIX_FILE_SEPEATOR_STR    "/"    /**<   */
@@ -64,8 +45,10 @@ static enum x_stat fio_absolute_path_name(char *file_name, char *out) {
     }
     #ifdef _WIN32
         if (GetFullPathName((LPWSTR)file_name, MAX_PATH, (LPWSTR)out, XTD_NULL) == 0) {
-    #else
+    #elif defined(__STDC_VERSION__)
         if (realpath(file_name, out)) {
+    #else
+        if (TRUE) {
     #endif
             return XTD_ERR;
         }
