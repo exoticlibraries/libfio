@@ -6,6 +6,14 @@
 #include <exotic/cester.h>
 #include <exotic/fio/fs.h>
 
+#ifdef _WIN32
+#define TEST_ASSERTION_1 cester_assert_str_equal(full_file_path, "C:\\");
+#endif
+#ifdef _WIN32
+#define TEST_ASSERTION_2 cester_assert_str_equal(full_file_path, "Y:\\..:\\Users\\thecarisma");
+#endif
+
+
 CESTER_TEST(fio_absolute_path_name, test_inst, {
     char full_file_path[260];
     enum x_stat status;
@@ -17,16 +25,12 @@ CESTER_TEST(fio_absolute_path_name, test_inst, {
     status = fio_absolute_path_name("C:../../.././../../../.././//.../../../.././../../", full_file_path);
     cester_assert_uint_eq(status, XTD_OK);
     cester_assert_str_not_equal(full_file_path, XTD_NULL);
-#ifdef _WIN32
-    cester_assert_str_equal(full_file_path, "C:\\");
-#endif
+    TEST_ASSERTION_1
 
     status = fio_absolute_path_name("Y:..:/Users/thecarisma", full_file_path);
     cester_assert_uint_eq(status, XTD_OK);
     cester_assert_str_not_equal(full_file_path, XTD_NULL);
-#ifdef _WIN32
-    cester_assert_str_equal(full_file_path, "Y:\\..:\\Users\\thecarisma");
-#endif
+    TEST_ASSERTION_2
 })
 
 CESTER_TODO_TEST(fio_relative_path_name, test_inst, {
@@ -95,3 +99,4 @@ CESTER_TEST(fio_file_extension, test_inst, {
 CESTER_OPTIONS(
     CESTER_VERBOSE_LEVEL(3);
 )
+

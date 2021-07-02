@@ -6,6 +6,12 @@
 #include <exotic/cester.h>
 #include <exotic/fio/fs.h>
 
+
+#ifdef _WIN32
+#define OPTIONAL_ASSERTION_1 cester_assert_false(fio_create_file("/folder/dami.txt"));
+#define OPTIONAL_ASSERTION_2 cester_assert_false(fio_create_file("dami.$#&$*$*($)$)!@#$%%^&^*&*(()"));
+#endif
+
 CESTER_BODY(
 
 char *file_content = "";
@@ -24,10 +30,8 @@ CESTER_BEFORE_ALL(test_inst, {
 
 CESTER_TEST(fio_create_file, test_inst, {
     cester_assert_true(fio_create_file("dami.txt"));
-#ifdef _WIN32
-    cester_assert_false(fio_create_file("/folder/dami.txt"));
-    cester_assert_false(fio_create_file("dami.$#&$*$*($)$)!@#$%%^&^*&*(()"));
-#endif
+    OPTIONAL_ASSERTION_1
+    OPTIONAL_ASSERTION_2
 })
 
 CESTER_TEST(fio_file_exists, test_inst, {

@@ -44,7 +44,7 @@ static enum x_stat fio_absolute_path_name(char *file_name, char *out) {
         return XTD_PARAM_NULL_ERR;
     }
     #ifdef _WIN32
-        if (GetFullPathName((LPWSTR)file_name, MAX_PATH, (LPWSTR)out, XTD_NULL) == 0) {
+        if (GetFullPathName(file_name, MAX_PATH, out, XTD_NULL) == 0) {
     #elif defined(__STDC_VERSION__)
         if (realpath(file_name, out)) {
     #else
@@ -64,10 +64,10 @@ static enum x_stat fio_file_name_from_path(char *path, char *out) {
     if (path == XTD_NULL || out == XTD_NULL) {
         return XTD_PARAM_NULL_ERR;
     }
-    index_unix = xstring_str_last_index_of(path, FIO_UNIX_FILE_SEPEATOR_STR);
-    index_win32 = xstring_str_last_index_of(path, FIO_WIN32_FILE_SEPEATOR_STR);
+    index_unix = xstring_cstr_last_index_of(path, FIO_UNIX_FILE_SEPEATOR_STR);
+    index_win32 = xstring_cstr_last_index_of(path, FIO_WIN32_FILE_SEPEATOR_STR);
     index_unix = (index_unix > index_win32) ? index_unix : index_win32;
-    return xstring_str_sub_string(path, ++index_unix, out);
+    return xstring_cstr_sub_string(path, ++index_unix, out);
 }
 
 /**
@@ -78,11 +78,11 @@ static enum x_stat fio_file_name_only(char *path, char *out) {
     if (path == XTD_NULL || out == XTD_NULL) {
         return XTD_PARAM_NULL_ERR;
     }
-    index = xstring_str_last_index_of(path, ".");
+    index = xstring_cstr_last_index_of(path, ".");
     if (index == -1) {
-        index = xstring_str_length(path);
+        index = xstring_cstr_length(path);
     }
-    return xstring_str_sub_string_in_range(path, 0, index, out);
+    return xstring_cstr_sub_string_in_range(path, 0, index, out);
 }
 
 /**
@@ -93,11 +93,11 @@ static enum x_stat fio_file_extension(char *path, char *out) {
     if (path == XTD_NULL || out == XTD_NULL) {
         return XTD_PARAM_NULL_ERR;
     }
-    index = xstring_str_last_index_of(path, ".");
+    index = xstring_cstr_last_index_of(path, ".");
     if (index == -1) {
-        index = xstring_str_length(path);
+        index = xstring_cstr_length(path);
     }
-    return xstring_str_sub_string(path, index, out);
+    return xstring_cstr_sub_string(path, index, out);
 }
 
 /**

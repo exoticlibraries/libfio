@@ -26,9 +26,9 @@ foreach(filepath ${files})
         COMMAND echo -------------------------------------------
         
         # clang 
-        COMMAND clang -I. ${INCLUDE_PATHS} ${filepath} -o ./build/${filenameonly}_clang${FILE_EXT}
-        COMMAND clang -ansi -pedantic-errors -I. ${INCLUDE_PATHS} ${filepath} -o ./build/${filenameonly}_clang_ansi${FILE_EXT}
-        COMMAND clang++ -I. ${INCLUDE_PATHS} ${filepath} -o ./build/${filenameonly}_clang_cpp${FILE_EXT}
+        #COMMAND clang -I. ${INCLUDE_PATHS} ${filepath} -o ./build/${filenameonly}_clang${FILE_EXT}
+        #COMMAND clang -ansi -pedantic-errors -I. ${INCLUDE_PATHS} ${filepath} -o ./build/${filenameonly}_clang_ansi${FILE_EXT}
+        #COMMAND clang++ -I. ${INCLUDE_PATHS} ${filepath} -o ./build/${filenameonly}_clang_cpp${FILE_EXT}
     
         # gcc
         COMMAND gcc -I. ${INCLUDE_PATHS} ${filepath} -o ./build/${filenameonly}_gcc${FILE_EXT}
@@ -44,9 +44,9 @@ foreach(filepath ${files})
         COMMAND echo -------------------------------------------
         
         # clang
-        COMMAND ./build/${filenameonly}_clang${FILE_EXT}
-        COMMAND ./build/${filenameonly}_clang_ansi${FILE_EXT} --cester-output=junitxml
-        COMMAND ./build/${filenameonly}_clang_cpp${FILE_EXT} --cester-output=tap
+        #COMMAND ./build/${filenameonly}_clang${FILE_EXT}
+        #COMMAND ./build/${filenameonly}_clang_ansi${FILE_EXT} --cester-output=junitxml
+        #COMMAND ./build/${filenameonly}_clang_cpp${FILE_EXT} --cester-output=tap
         
         # gcc
         COMMAND ./build/${filenameonly}_gcc${FILE_EXT}
