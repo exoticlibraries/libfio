@@ -179,6 +179,41 @@ static enum x_stat fio_read_file_chars_cb_from_path(char *fileName, fio_func_ptr
 }
 
 /*
+    
+*/
+typedef void (*fio_func_ptr_report_char2)(void *, char);
+
+/*
+    Read file. 2
+*/
+static enum x_stat fio_read_file_chars_cb2(FILE * file, fio_func_ptr_report_char2 callback, void *param) {
+    if (file == XTD_NULL || callback == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    while (TRUE) {
+        char c = fgetc(file);
+        if (feof(file)) {
+            callback(param, '\0');
+            break;
+        }
+        callback(param, c);
+    }
+    return XTD_OK;
+}
+
+/* 
+    Read file from path. 2
+*/
+static enum x_stat fio_read_file_chars_cb_from_path2(char *fileName, fio_func_ptr_report_char2 callback, void *param) {
+    FILE * file = fopen(fileName, "r");
+    enum x_stat status = fio_read_file_chars_cb2(file, callback, param);
+    if (status == XTD_OK) {
+        fclose(file);
+    }
+    return status;
+}
+
+/*
     Read all file string.
 */
 static enum x_stat fio_read_all_file_content(FILE * file, char *out) {
