@@ -14,6 +14,19 @@
 #endif
 
 
+CESTER_TEST(fio_get_current_dir, test_inst, {
+    XAllocator allocator;
+    char *current_directory;
+    
+    init_xallocator(&allocator);
+    cester_assert_uint_eq(fio_get_current_dir(allocator, XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_get_current_dir(allocator, &current_directory), XTD_OK);
+    cester_assert_str_not_equal(current_directory, XTD_NULL);
+    printf("Current Folder: %s\n", current_directory);
+    allocator.memory_free(current_directory);
+})
+
+
 CESTER_TEST(fio_absolute_path_name, test_inst, {
     char full_file_path[260];
     enum x_stat status;
@@ -33,13 +46,28 @@ CESTER_TEST(fio_absolute_path_name, test_inst, {
     TEST_ASSERTION_2
 })
 
-CESTER_TODO_TEST(fio_relative_path_name, test_inst, {
-    char full_file_path[260];
-    enum x_stat status;
+CESTER_TEST(fio_relative_path_name, test_inst, {
+    char *value;
+    XAllocator allocator;
+    char *file_name1 = "C:/";
+    char *file_name2 = "C:\\Users\\name\\";
+    char *file_name3 = "C:\\Users\\name\\Documents\\home.blade.php";
+    char *file_name4 = "/usr/lib/";
+    char *file_name5 = "/usr/lib/exotic/cester.h";
 
-    status = fio_relative_path_name(test_inst->argv[0], full_file_path);
-    cester_assert_uint_eq(status, XTD_OK);
-    cester_assert_str_not_equal(full_file_path, XTD_NULL);
+    init_xallocator(&allocator);
+    cester_assert_uint_eq(fio_relative_path_name(allocator, XTD_NULL, XTD_NULL, '/', XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_relative_path_name(allocator, file_name1, file_name2, '/', XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_relative_path_name(allocator, file_name1, file_name2, '/', &value), XTD_OK);
+    cester_assert_str_equal(value, "Users/name/"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_relative_path_name(allocator, file_name1, file_name2, '\\', &value), XTD_OK);
+    cester_assert_str_equal(value, "Users\\name\\"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_relative_path_name(allocator, file_name2, file_name3, '\\', &value), XTD_OK);
+    cester_assert_str_equal(value, "Documents\\home.blade.php"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_relative_path_name(allocator, file_name2, file_name3, '/', &value), XTD_OK);
+    cester_assert_str_equal(value, "Documents/home.blade.php"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_relative_path_name(allocator, file_name4, file_name5, '/', &value), XTD_OK);
+    cester_assert_str_equal(value, "exotic/cester.h"); allocator.memory_free(value);
 })
 
 CESTER_TEST(fio_file_name_from_path, test_inst, {
@@ -94,6 +122,33 @@ CESTER_TEST(fio_file_extension, test_inst, {
     cester_assert_str_equal(file_name_only, ".php");
     cester_assert_uint_eq(fio_file_extension(file_name3, file_name_only), XTD_OK);
     cester_assert_str_equal(file_name_only, "");
+})
+
+CESTER_TEST(fio_normalize_path, test_inst, {
+    char *value;
+    XAllocator allocator;
+    char *file_name1 = "C:/User/thecarisma/text.txt";
+    char *file_name2 = "C:\\/\\User/\\/thecarisma\\folder/text.txt";
+    char *file_name3 = "/usr/dir/dist.zip.tmp";
+    char *file_name4 = "\\/usr///////home/dir/\\dist.zip.tmp//\\//\\\\\\///\\\\////\\";
+
+    init_xallocator(&allocator);
+    cester_assert_uint_eq(fio_normalize_path(allocator, XTD_NULL, '\\', XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_normalize_path(allocator, file_name1, '/', XTD_NULL), XTD_PARAM_NULL_ERR);
+    cester_assert_uint_eq(fio_normalize_path(allocator, file_name1, '/', &value), XTD_OK);
+    cester_assert_str_equal(value, "C:/User/thecarisma/text.txt"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_normalize_path(allocator, file_name1, '\\', &value), XTD_OK);
+    cester_assert_str_equal(value, "C:\\User\\thecarisma\\text.txt"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_normalize_path(allocator, file_name2, '/', &value), XTD_OK);
+    cester_assert_str_equal(value, "C:/User/thecarisma/folder/text.txt"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_normalize_path(allocator, file_name2, '\\', &value), XTD_OK);
+    cester_assert_str_equal(value, "C:\\User\\thecarisma\\folder\\text.txt"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_normalize_path(allocator, file_name3, '\\', &value), XTD_OK);
+    cester_assert_str_equal(value, "\\usr\\dir\\dist.zip.tmp"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_normalize_path(allocator, file_name4, '\\', &value), XTD_OK);
+    cester_assert_str_equal(value, "\\usr\\home\\dir\\dist.zip.tmp\\"); allocator.memory_free(value);
+    cester_assert_uint_eq(fio_normalize_path(allocator, file_name4, '/', &value), XTD_OK);
+    cester_assert_str_equal(value, "/usr/home/dir/dist.zip.tmp/"); allocator.memory_free(value);
 })
 
 CESTER_OPTIONS(

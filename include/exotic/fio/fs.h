@@ -17,7 +17,10 @@ extern "C" {
 #include <exotic/xtd/xcommon.h>
 #include <exotic/xtd/xstring.h>
 #ifdef _WIN32
+#include <direct.h>
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 #define FIO_UNIX_FILE_SEPEATOR    '/'    /**<   */
@@ -36,7 +39,28 @@ extern "C" {
 #define FIO_FILE_SEPERATOR_STR FIO_UNIX_FILE_SEPEATOR_STR
 #endif
 
-/**
+/*!
+    
+*/
+static enum x_stat fio_get_current_dir(XAllocator allocator, char **out) {
+    char *value;
+    char current_dir[256];
+
+    if (out == XTD_NULL) return XTD_PARAM_NULL_ERR;
+    #ifdef _WIN32
+        if (_getcwd(current_dir, 256) == XTD_NULL) {
+    #else
+        if (getcwd(current_dir, sizeof(current_dir)) == XTD_NULL) {
+    #endif
+            return XTD_ERR;
+        }
+    value = xstring_cstr_concat_cstr(XTD_NULL, current_dir, allocator);
+    *out = value;
+
+    return XTD_OK;
+}
+
+/*!
     
 */
 static enum x_stat fio_absolute_path_name(char *file_name, char *out) {
@@ -52,6 +76,66 @@ static enum x_stat fio_absolute_path_name(char *file_name, char *out) {
     #endif
             return XTD_ERR;
         }
+    return XTD_OK;
+}
+
+/*!
+
+*/
+static enum x_stat fio_normalize_path(XAllocator allocator, char *rough_path, char seperator, char **out) {
+    char *normalized_path;
+    size_t index, next_index;
+    size_t rough_path_length;
+
+    if (rough_path == XTD_NULL || out == XTD_NULL) return XTD_PARAM_NULL_ERR;
+    rough_path_length = xstring_cstr_length(rough_path);
+    normalized_path = xstring_cstr_concat_cstr(XTD_NULL, "", allocator);
+    for (index = 0; index < rough_path_length; index++) {
+        switch (rough_path[index]) {
+            case '\\':
+            case '/':
+                normalized_path = xstring_cstr_concat_char_free_old(normalized_path, seperator, allocator);
+                next_index = index + 1;
+                while (next_index < rough_path_length && (rough_path[next_index] == '\\' || rough_path[next_index] == '/')) {
+                    next_index++;
+                    index++;
+                }
+                break;
+            default:
+                normalized_path = xstring_cstr_concat_char_free_old(normalized_path, rough_path[index], allocator);
+        }
+    }
+    *out = normalized_path;
+    
+    return XTD_OK;
+}
+
+/**
+    
+*/
+static enum x_stat fio_relative_path_name(XAllocator allocator, char *parent_path, char *child_path, char seperator, char **out) {
+    char *relative_path;
+    char *normalized_parent_path;
+    char *normalized_child_path;
+    size_t normalized_child_path_length;
+    size_t normalized_parent_path_length;
+
+    if (parent_path == XTD_NULL || child_path == XTD_NULL || out == XTD_NULL) return XTD_PARAM_NULL_ERR;
+    if (fio_normalize_path(allocator, parent_path, seperator, &normalized_parent_path) != XTD_OK) return XTD_CRITICAL_ERR;
+    if (fio_normalize_path(allocator, child_path, seperator, &normalized_child_path) != XTD_OK) return XTD_CRITICAL_ERR;
+    if (!xstring_cstr_starts_with(normalized_child_path, normalized_parent_path))  {
+        allocator.memory_free(normalized_parent_path);
+        allocator.memory_free(normalized_child_path);
+        return XTD_NO_OP;
+    }
+    normalized_child_path_length = xstring_cstr_length(normalized_child_path);
+    normalized_parent_path_length = xstring_cstr_length(normalized_parent_path);
+    relative_path = xstring_cstr_concat_cstr(XTD_NULL, "", allocator);
+    for (; normalized_parent_path_length < normalized_child_path_length; normalized_parent_path_length++) {
+        relative_path = xstring_cstr_concat_char_free_old(relative_path, normalized_child_path[normalized_parent_path_length], allocator);
+    }
+    *out = relative_path;
+
     return XTD_OK;
 }
 
