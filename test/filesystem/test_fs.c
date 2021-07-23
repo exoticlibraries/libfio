@@ -46,6 +46,7 @@ CESTER_TEST(fio_absolute_path_name, test_inst, {
     TEST_ASSERTION_2
 })
 
+// TODO treat relative to file in another parent folder, not just starts with
 CESTER_TEST(fio_relative_path_name, test_inst, {
     char *value;
     XAllocator allocator;
@@ -124,6 +125,7 @@ CESTER_TEST(fio_file_extension, test_inst, {
     cester_assert_str_equal(file_name_only, "");
 })
 
+// TODO normalize should normalize file in other parent other folder not just slash
 CESTER_TEST(fio_normalize_path, test_inst, {
     char *value;
     XAllocator allocator;

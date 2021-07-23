@@ -54,7 +54,7 @@ static enum x_stat fio_get_current_dir(XAllocator allocator, char **out) {
     #endif
             return XTD_ERR;
         }
-    value = xstring_cstr_concat_cstr(XTD_NULL, current_dir, allocator);
+    value = xstring_cstr_concat_cstr(allocator, XTD_NULL, current_dir);
     *out = value;
 
     return XTD_OK;
@@ -89,12 +89,12 @@ static enum x_stat fio_normalize_path(XAllocator allocator, char *rough_path, ch
 
     if (rough_path == XTD_NULL || out == XTD_NULL) return XTD_PARAM_NULL_ERR;
     rough_path_length = xstring_cstr_length(rough_path);
-    normalized_path = xstring_cstr_concat_cstr(XTD_NULL, "", allocator);
+    normalized_path = xstring_cstr_concat_cstr(allocator, XTD_NULL, "");
     for (index = 0; index < rough_path_length; index++) {
         switch (rough_path[index]) {
             case '\\':
             case '/':
-                normalized_path = xstring_cstr_concat_char_free_old(normalized_path, seperator, allocator);
+                normalized_path = xstring_cstr_concat_char_free_old(allocator, normalized_path, seperator);
                 next_index = index + 1;
                 while (next_index < rough_path_length && (rough_path[next_index] == '\\' || rough_path[next_index] == '/')) {
                     next_index++;
@@ -102,7 +102,7 @@ static enum x_stat fio_normalize_path(XAllocator allocator, char *rough_path, ch
                 }
                 break;
             default:
-                normalized_path = xstring_cstr_concat_char_free_old(normalized_path, rough_path[index], allocator);
+                normalized_path = xstring_cstr_concat_char_free_old(allocator, normalized_path, rough_path[index]);
         }
     }
     *out = normalized_path;
@@ -130,9 +130,9 @@ static enum x_stat fio_relative_path_name(XAllocator allocator, char *parent_pat
     }
     normalized_child_path_length = xstring_cstr_length(normalized_child_path);
     normalized_parent_path_length = xstring_cstr_length(normalized_parent_path);
-    relative_path = xstring_cstr_concat_cstr(XTD_NULL, "", allocator);
+    relative_path = xstring_cstr_concat_cstr(allocator, XTD_NULL, "");
     for (; normalized_parent_path_length < normalized_child_path_length; normalized_parent_path_length++) {
-        relative_path = xstring_cstr_concat_char_free_old(relative_path, normalized_child_path[normalized_parent_path_length], allocator);
+        relative_path = xstring_cstr_concat_char_free_old(allocator, relative_path, normalized_child_path[normalized_parent_path_length]);
     }
     *out = relative_path;
 
