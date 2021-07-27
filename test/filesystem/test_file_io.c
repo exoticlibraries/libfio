@@ -17,8 +17,9 @@ CESTER_BODY(
 char *file_content = "";
 size_t file_index = 0;
 
-void log_file(char c) {
+bool log_file(char c) {
     file_content[file_index++] = c;
+    return TRUE;
 }
 
 )

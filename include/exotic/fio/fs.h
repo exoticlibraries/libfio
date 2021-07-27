@@ -230,7 +230,7 @@ static bool fio_file_exists(char file_name[]) {
 /*
     
 */
-typedef void (*fio_func_ptr_report_char)(char);
+typedef bool (*fio_func_ptr_report_char)(char);
 
 /*
     Read file.
@@ -242,10 +242,10 @@ static enum x_stat fio_read_file_chars_cb(FILE * file, fio_func_ptr_report_char 
     while (TRUE) {
         char c = fgetc(file);
         if (feof(file)) {
-            callback('\0');
+            if (!callback('\0')) return XTD_TERMINATED_ERR;
             break;
         }
-        callback(c);
+        if (!callback(c)) return XTD_TERMINATED_ERR;
     }
     return XTD_OK;
 }
@@ -265,7 +265,7 @@ static enum x_stat fio_read_file_chars_cb_from_path(char *fileName, fio_func_ptr
 /*
     
 */
-typedef void (*fio_func_ptr_report_char2)(void *, char);
+typedef bool (*fio_func_ptr_report_char2)(void *, char);
 
 /*
     Read file. 2
@@ -277,10 +277,10 @@ static enum x_stat fio_read_file_chars_cb2(FILE * file, fio_func_ptr_report_char
     while (TRUE) {
         char c = fgetc(file);
         if (feof(file)) {
-            callback(param, '\0');
+            if (!callback(param, '\0')) return XTD_TERMINATED_ERR;
             break;
         }
-        callback(param, c);
+        if (!callback(param, c)) return XTD_TERMINATED_ERR;
     }
     return XTD_OK;
 }
