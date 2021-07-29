@@ -17,26 +17,10 @@ extern "C" {
 #include <exotic/xtd/xcommon.h>
 #include <exotic/xtd/xstring.h>
 #ifdef _WIN32
+#include <direct.h>
 #include <windows.h>
-#endif
-
-/**
-    Define bool to be unsigned
-*/
-#ifndef bool 
-#define bool unsigned
-#endif
-#ifndef FALSE
-    #define FALSE 0
-#endif
-#ifndef TRUE
-    #define TRUE !FALSE
-#endif
-#ifndef false
-    #define false 0
-#endif
-#ifndef true
-    #define true !false
+#else
+#include <unistd.h>
 #endif
 
 #define FIO_UNIX_FILE_SEPEATOR    '/'    /**<   */
@@ -55,7 +39,28 @@ extern "C" {
 #define FIO_FILE_SEPERATOR_STR FIO_UNIX_FILE_SEPEATOR_STR
 #endif
 
-/**
+/*!
+    
+*/
+static enum x_stat fio_get_current_dir(XAllocator allocator, char **out) {
+    char *value;
+    char current_dir[256];
+
+    if (out == XTD_NULL) return XTD_PARAM_NULL_ERR;
+    #ifdef _WIN32
+        if (_getcwd(current_dir, 256) == XTD_NULL) {
+    #else
+        if (getcwd(current_dir, sizeof(current_dir)) == XTD_NULL) {
+    #endif
+            return XTD_ERR;
+        }
+    value = xstring_cstr_concat_cstr(allocator, XTD_NULL, current_dir);
+    *out = value;
+
+    return XTD_OK;
+}
+
+/*!
     
 */
 static enum x_stat fio_absolute_path_name(char *file_name, char *out) {
@@ -63,12 +68,74 @@ static enum x_stat fio_absolute_path_name(char *file_name, char *out) {
         return XTD_PARAM_NULL_ERR;
     }
     #ifdef _WIN32
-        if (GetFullPathName((LPWSTR)file_name, MAX_PATH, (LPWSTR)out, XTD_NULL) == 0) {
-    #else
+        if (GetFullPathName(file_name, MAX_PATH, out, XTD_NULL) == 0) {
+    #elif defined(__STDC_VERSION__)
         if (realpath(file_name, out)) {
+    #else
+        if (TRUE) {
     #endif
             return XTD_ERR;
         }
+    return XTD_OK;
+}
+
+/*!
+
+*/
+static enum x_stat fio_normalize_path(XAllocator allocator, char *rough_path, char seperator, char **out) {
+    char *normalized_path;
+    size_t index, next_index;
+    size_t rough_path_length;
+
+    if (rough_path == XTD_NULL || out == XTD_NULL) return XTD_PARAM_NULL_ERR;
+    rough_path_length = xstring_cstr_length(rough_path);
+    normalized_path = xstring_cstr_concat_cstr(allocator, XTD_NULL, "");
+    for (index = 0; index < rough_path_length; index++) {
+        switch (rough_path[index]) {
+            case '\\':
+            case '/':
+                normalized_path = xstring_cstr_concat_char_free_old(allocator, normalized_path, seperator);
+                next_index = index + 1;
+                while (next_index < rough_path_length && (rough_path[next_index] == '\\' || rough_path[next_index] == '/')) {
+                    next_index++;
+                    index++;
+                }
+                break;
+            default:
+                normalized_path = xstring_cstr_concat_char_free_old(allocator, normalized_path, rough_path[index]);
+        }
+    }
+    *out = normalized_path;
+    
+    return XTD_OK;
+}
+
+/**
+    
+*/
+static enum x_stat fio_relative_path_name(XAllocator allocator, char *parent_path, char *child_path, char seperator, char **out) {
+    char *relative_path;
+    char *normalized_parent_path;
+    char *normalized_child_path;
+    size_t normalized_child_path_length;
+    size_t normalized_parent_path_length;
+
+    if (parent_path == XTD_NULL || child_path == XTD_NULL || out == XTD_NULL) return XTD_PARAM_NULL_ERR;
+    if (fio_normalize_path(allocator, parent_path, seperator, &normalized_parent_path) != XTD_OK) return XTD_CRITICAL_ERR;
+    if (fio_normalize_path(allocator, child_path, seperator, &normalized_child_path) != XTD_OK) return XTD_CRITICAL_ERR;
+    if (!xstring_cstr_starts_with(normalized_child_path, normalized_parent_path))  {
+        allocator.memory_free(normalized_parent_path);
+        allocator.memory_free(normalized_child_path);
+        return XTD_NO_OP;
+    }
+    normalized_child_path_length = xstring_cstr_length(normalized_child_path);
+    normalized_parent_path_length = xstring_cstr_length(normalized_parent_path);
+    relative_path = xstring_cstr_concat_cstr(allocator, XTD_NULL, "");
+    for (; normalized_parent_path_length < normalized_child_path_length; normalized_parent_path_length++) {
+        relative_path = xstring_cstr_concat_char_free_old(allocator, relative_path, normalized_child_path[normalized_parent_path_length]);
+    }
+    *out = relative_path;
+
     return XTD_OK;
 }
 
@@ -81,10 +148,10 @@ static enum x_stat fio_file_name_from_path(char *path, char *out) {
     if (path == XTD_NULL || out == XTD_NULL) {
         return XTD_PARAM_NULL_ERR;
     }
-    index_unix = xstring_str_last_index_of(path, FIO_UNIX_FILE_SEPEATOR_STR);
-    index_win32 = xstring_str_last_index_of(path, FIO_WIN32_FILE_SEPEATOR_STR);
+    index_unix = xstring_cstr_last_index_of(path, FIO_UNIX_FILE_SEPEATOR_STR);
+    index_win32 = xstring_cstr_last_index_of(path, FIO_WIN32_FILE_SEPEATOR_STR);
     index_unix = (index_unix > index_win32) ? index_unix : index_win32;
-    return xstring_str_sub_string(path, ++index_unix, out);
+    return xstring_cstr_sub_string(path, ++index_unix, out);
 }
 
 /**
@@ -95,11 +162,11 @@ static enum x_stat fio_file_name_only(char *path, char *out) {
     if (path == XTD_NULL || out == XTD_NULL) {
         return XTD_PARAM_NULL_ERR;
     }
-    index = xstring_str_last_index_of(path, ".");
+    index = xstring_cstr_last_index_of(path, ".");
     if (index == -1) {
-        index = xstring_str_length(path);
+        index = xstring_cstr_length(path);
     }
-    return xstring_str_sub_string_in_range(path, 0, index, out);
+    return xstring_cstr_sub_string_in_range(path, 0, index, out);
 }
 
 /**
@@ -110,11 +177,11 @@ static enum x_stat fio_file_extension(char *path, char *out) {
     if (path == XTD_NULL || out == XTD_NULL) {
         return XTD_PARAM_NULL_ERR;
     }
-    index = xstring_str_last_index_of(path, ".");
+    index = xstring_cstr_last_index_of(path, ".");
     if (index == -1) {
-        index = xstring_str_length(path);
+        index = xstring_cstr_length(path);
     }
-    return xstring_str_sub_string(path, index, out);
+    return xstring_cstr_sub_string(path, index, out);
 }
 
 /**
@@ -163,7 +230,7 @@ static bool fio_file_exists(char file_name[]) {
 /*
     
 */
-typedef void (*fio_func_ptr_report_char)(char);
+typedef bool (*fio_func_ptr_report_char)(char);
 
 /*
     Read file.
@@ -175,10 +242,10 @@ static enum x_stat fio_read_file_chars_cb(FILE * file, fio_func_ptr_report_char 
     while (TRUE) {
         char c = fgetc(file);
         if (feof(file)) {
-            callback('\0');
+            if (!callback('\0')) return XTD_TERMINATED_ERR;
             break;
         }
-        callback(c);
+        if (!callback(c)) return XTD_TERMINATED_ERR;
     }
     return XTD_OK;
 }
@@ -189,6 +256,41 @@ static enum x_stat fio_read_file_chars_cb(FILE * file, fio_func_ptr_report_char 
 static enum x_stat fio_read_file_chars_cb_from_path(char *fileName, fio_func_ptr_report_char callback) {
     FILE * file = fopen(fileName, "r");
     enum x_stat status = fio_read_file_chars_cb(file, callback);
+    if (status == XTD_OK) {
+        fclose(file);
+    }
+    return status;
+}
+
+/*
+    
+*/
+typedef bool (*fio_func_ptr_report_char2)(void *, char);
+
+/*
+    Read file. 2
+*/
+static enum x_stat fio_read_file_chars_cb2(FILE * file, fio_func_ptr_report_char2 callback, void *param) {
+    if (file == XTD_NULL || callback == XTD_NULL) {
+        return XTD_PARAM_NULL_ERR;
+    }
+    while (TRUE) {
+        char c = fgetc(file);
+        if (feof(file)) {
+            if (!callback(param, '\0')) return XTD_TERMINATED_ERR;
+            break;
+        }
+        if (!callback(param, c)) return XTD_TERMINATED_ERR;
+    }
+    return XTD_OK;
+}
+
+/* 
+    Read file from path. 2
+*/
+static enum x_stat fio_read_file_chars_cb_from_path2(char *fileName, fio_func_ptr_report_char2 callback, void *param) {
+    FILE * file = fopen(fileName, "r");
+    enum x_stat status = fio_read_file_chars_cb2(file, callback, param);
     if (status == XTD_OK) {
         fclose(file);
     }
